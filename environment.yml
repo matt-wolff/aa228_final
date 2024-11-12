@@ -1,0 +1,9 @@
+name: aa228_final
+channels:
+  - anaconda
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch
+  - numpy
+  - pandas

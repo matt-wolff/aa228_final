@@ -79,7 +79,6 @@ class hand:
     #returns current state (hole cards, table cards, current bet to call, current pot, current money available) note: discuss with matt about who calling / betting history as a state, right now is heads up so who cares
     #this is function matt will call while training to return the
     # I need to give the state, matt gives me the action, I return the reward and next state
-        #question: how do I give that first state?
     #get_state which returns current state
     #get_reward which returns current rewards when given action and leaves game at next state
     def get_state(self):

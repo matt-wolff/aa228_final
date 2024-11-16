@@ -25,10 +25,12 @@ class Game:
     # TODO: need to change to one-hot encoding, contantenated
     def create_deck(self):
         # Define ranks and suits
-        values = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
-        suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades'] # catetorical for training
-        # list of tuples (value, suit)
-        deck = [(value, suit) for value in values for suit in suits]
+        values = np.identity(13)
+        suits = np.identity(4) # catetorical for training
+        deck = []
+        for i in range(len(values)):
+            for j in range(len(suits)):
+                deck.append(np.concatenate((values[i], suits[j])))
 
         random.shuffle(deck)
 

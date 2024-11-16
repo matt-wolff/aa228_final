@@ -22,7 +22,6 @@ class Player:
 #dealers choice rule is array for wild card
 class Game:
     #create deck function, 11-14 face cards (10,11,12,13,14)
-    # TODO: need to change to one-hot encoding, contantenated
     def create_deck(self):
         # Define ranks and suits
         values = np.identity(13)

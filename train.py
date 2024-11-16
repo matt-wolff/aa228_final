@@ -3,10 +3,21 @@ from model import PokerModel
 from poker import Game
 import copy
 import random
+from datetime import datetime
+import matplotlib.pyplot as plt
 
 NUM_ACTIONS = 10000  # Number of actions to take
 BATCH_SIZE = 10
 GAMMA = 1
+
+def plot_losses(losses, timestamp):
+    plt.figure(figsize=(10, 6))
+    plt.plot(losses)
+    plt.xlabel('Iteration')
+    plt.ylabel('Loss')
+    plt.title('Self Play Loss')
+    plt.grid(True)
+    plt.savefig(f"plots/self_play_{timestamp}.png")
 
 def main():
     agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5, vanilla=False)
@@ -64,10 +75,15 @@ def main():
             loss.backward()
             agent.optimizer.step()
 
+            print(f"Iteration: {i}, Loss: {loss.float()}")
             losses.append(loss.float())
 
         if (i+1 % 1000 == 0):
             target_agent = copy.deepcopy(agent)
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    plot_losses(losses, timestamp)
+    torch.save(agent.state_dict(), f"models/self_play_{timestamp}.pth")
 
 
 if __name__ == "__main__":

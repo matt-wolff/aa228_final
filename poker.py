@@ -4,6 +4,7 @@ import random
 import torch
 from treys import Card
 from treys import Evaluator
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
 
@@ -52,8 +53,8 @@ class Game:
         self.button = button
         self.num_players = len(self.players)
         self.deck = self.create_deck()
-        self.table_cards = []
-        self.currrent_round = 0 # 0 = pre-flop, 1 = flop, and so on...
+        self.table_cards = np.zeros(17 * 5)
+        self.current_round = 0 # 0 = pre-flop, 1 = flop, and so on...
         self.dealers_choice_rule = dealers_choice_rule
         self.pot = 0
         self.current_to_act = self.update_current_to_act(self.button, self.num_players)
@@ -83,17 +84,20 @@ class Game:
     # returns tuple of dealers choice rule (array), hole cards (array of arrays), table cards (array of arrays), pot, bet to call, and position
     def get_state(self):
         current_player = self.players[self.current_to_act]
-        return (self.dealers_choice_rule, current_player.hole_cards, self.table_cards, self.pot, self.bet_to_call, current_player.total_chips, self.current_to_act)
+        state = np.concatenate(
+            [self.dealers_choice_rule] + current_player.hole_cards + [self.table_cards] + [np.array([self.pot, self.bet_to_call, current_player.total_chips, self.current_to_act])]
+        )
+        return torch.from_numpy(state).float().to(DEVICE)
     
     def convert_card(self, card):
         indexes = [i for i, x in enumerate(card) if x == 1]
         values_dict = {10: "T", 11: "J", 12: "Q", 13: "K", 14: "A"}
         value = indexes[0] + 2
         if (value >= 10):
-            value = values_dict(value)
+            value = values_dict[value]
         
-        suit_dict = {0: "h", 1: "d", 2: "c", 3: "s"}
-        suit = suit_dict(indexes[1])
+        suit_dict = {13: "h", 14: "d", 15: "c", 16: "s"}
+        suit = suit_dict[indexes[1]]
 
         return str(value) + suit
 
@@ -101,7 +105,8 @@ class Game:
     def showdown(self, reward):
         converted_button = [Card.new(self.convert_card(card)) for card in self.players[0].hole_cards]
         converted_other = [Card.new(self.convert_card(card)) for card in self.players[1].hole_cards]
-        converted_table = [Card.new(self.convert_card(card)) for card in self.table_cards]
+        separated_tabled_cards = [self.table_cards[i*17:(i+1)*17] for i in range(5)]
+        converted_table = [Card.new(self.convert_card(card)) for card in separated_tabled_cards]
 
         evaluator = Evaluator()
         button_score = evaluator.evaluate(converted_table, converted_button)
@@ -124,11 +129,13 @@ class Game:
     def next_round(self, reward):
         if self.current_round == 0: #pre-flop
             for i in range(3):
-                self.table_cards.append(self.deck.pop())
+                self.table_cards[i*17:(i+1)*17] = self.deck.pop()
+        elif self.current_round == 1:  # flop
+            self.table_cards[3*17:(3+1)*17] = self.deck.pop()
+        elif self.current_round == 2:  # turn
+            self.table_cards[4*17:(4+1)*17] = self.deck.pop()
         elif self.current_round == 3: #river
             return self.showdown(reward), True
-        else: # 1 or 2, current is flop or turn
-            self.table_cards.append(self.deck.pop())
 
         self.current_to_act = self.update_current_to_act(self.button, self.num_players)
         self.current_round += 1
@@ -215,7 +222,7 @@ class Game:
         elif (action == 6 or action == 7 or action == 8 or action == 9): # raise by the pot (1/4, 1/2, 1 ,2) Q: 4 also?
             raise_scalar = 2 ** (action - 6)
             pot_scalar = (1/4) * raise_scalar
-            amount = pot_scalar * self.pot
+            amount = int(pot_scalar * self.pot)
             return self.raise_bet(amount)
         else: #all-in
             return self.all_in()

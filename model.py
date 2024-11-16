@@ -2,9 +2,10 @@ from torch.optim import AdamW
 import torch.nn as nn
 import numpy as np
 import random
+import torch
 
 NUM_WILD_CARDS = 13
-STATE_DIM = 135  # First thirteen are wild cards
+STATE_DIM = 136  # First thirteen are wild cards
 ACTION_DIM = 11  # check, call, fold, raise (2x, 3x, 4x highest bet. 1/4, 1/2, 1, 2 pot. all-in)
 
 class PokerModel(nn.Module):
@@ -15,6 +16,7 @@ class PokerModel(nn.Module):
             dropout_p,
             vanilla  # If true, don't consider the first 
         ):
+        super().__init__()
         self.vanilla = vanilla
 
         layers = []
@@ -27,7 +29,7 @@ class PokerModel(nn.Module):
             ])
             prev_dim = hidden_dim
         layers.append(nn.Linear(prev_dim, ACTION_DIM))
-        self.model = nn.Sequential(layers)
+        self.model = nn.Sequential(*layers)
         self.optimizer = AdamW(self.model.parameters())
 
         self.epsilion = 1
@@ -35,7 +37,7 @@ class PokerModel(nn.Module):
 
     def max_action(self, state_vector):
         logits = self.model(state_vector)
-        action = np.argmax(logits)
+        action = torch.argmax(logits)
         return action, logits[action]
 
     def next_action(self, state_vector):

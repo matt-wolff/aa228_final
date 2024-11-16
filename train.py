@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 NUM_ACTIONS = 10000  # Number of actions to take
 BATCH_SIZE = 10
 GAMMA = 1
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 def plot_losses(losses, timestamp):
     plt.figure(figsize=(10, 6))
@@ -20,7 +21,7 @@ def plot_losses(losses, timestamp):
     plt.savefig(f"plots/self_play_{timestamp}.png")
 
 def main():
-    agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5, vanilla=False)
+    agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5, vanilla=False).to(DEVICE)
     target_agent = agent
 
     game = Game()
@@ -32,12 +33,16 @@ def main():
         []
     ]
 
-    for i in range(len(NUM_ACTIONS)):
+    next_state = game.get_state()
+    for i in range(NUM_ACTIONS):
         current_player = game.current_to_act
         current_state = next_state
         if transtion_construction[current_player]:
             transtion_construction[current_player].append(current_state)
-            replay_buffer = replay_buffer[1:] + [transtion_construction[current_player]]
+            if len(replay_buffer) >= 100:
+                    replay_buffer = replay_buffer[1:] + [transtion_construction[current_player]]
+            else:
+                replay_buffer.append(transtion_construction[current_player])
             transtion_construction[current_player] = []
 
         action, _ = agent.next_action(current_state)
@@ -45,7 +50,10 @@ def main():
 
         if game_finished:
             cur_player_transition = [current_state, action, reward, None]
-            replay_buffer = replay_buffer[1:] + [cur_player_transition]
+            if len(replay_buffer) >= 100:
+                replay_buffer = replay_buffer[1:] + [cur_player_transition]
+            else:
+                replay_buffer.append(cur_player_transition)
             game = Game()
             next_state = game.get_state()
             # TODO: update last transition from other player
@@ -55,9 +63,12 @@ def main():
             if next_player != current_player:
                 transtion_construction[current_player] = [current_state, action, reward]
             else:
-                replay_buffer = replay_buffer[1:] + [[current_state, action, reward, next_state]]
+                if len(replay_buffer) >= 100:
+                    replay_buffer = replay_buffer[1:] + [[current_state, action, reward, next_state]]
+                else:
+                    replay_buffer.append([current_state, action, reward, next_state])
         
-        if len(replay_buffer) > 10:
+        if len(replay_buffer) >= BATCH_SIZE:
             minibatch = random.sample(replay_buffer, BATCH_SIZE)
 
             loss = 0

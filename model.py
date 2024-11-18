@@ -25,6 +25,7 @@ class PokerModel(nn.Module):
             layers.extend([
                 nn.Linear(prev_dim, hidden_dim),
                 nn.LayerNorm(hidden_dim),
+                nn.ReLU(),
                 nn.Dropout(dropout_p)
             ])
             prev_dim = hidden_dim

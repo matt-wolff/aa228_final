@@ -84,6 +84,15 @@ class Game:
     # returns tuple of dealers choice rule (array), hole cards (array of arrays), table cards (array of arrays), pot, bet to call, and position
     def get_state(self):
         current_player = self.players[self.current_to_act]
+
+        # TODO: Figure out where it is becoming a tensor
+        if isinstance(self.pot, torch.Tensor):
+            self.pot = self.pot.cpu()
+        if isinstance(self.bet_to_call, torch.Tensor):
+            self.bet_to_call = self.bet_to_call.cpu()
+        if isinstance(current_player.total_chips, torch.Tensor):
+            current_player.total_chips = current_player.total_chips.cpu()
+
         state = np.concatenate(
             [self.dealers_choice_rule] + current_player.hole_cards + [self.table_cards] + [np.array([self.pot, self.bet_to_call, current_player.total_chips, self.current_to_act])]
         )
@@ -151,6 +160,8 @@ class Game:
         return self.next_round(reward)
 
     def bet(self, amount):
+        if isinstance(amount, torch.Tensor):
+            amount = amount.cpu()
         self.pot += amount
         self.players[self.current_to_act].total_chips -= amount
         self.bet_to_call = amount

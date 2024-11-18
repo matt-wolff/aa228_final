@@ -18,7 +18,7 @@ def plot_losses(losses, timestamp):
     plt.ylabel('Loss')
     plt.title('Self Play Loss')
     plt.grid(True)
-    plt.savefig(f"plots/self_play_{timestamp}.png")
+    plt.savefig(f"aa228_final/plots/self_play_{timestamp}.png")
 
 def main():
     agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5, vanilla=False).to(DEVICE)
@@ -87,14 +87,14 @@ def main():
             agent.optimizer.step()
 
             print(f"Iteration: {i}, Loss: {loss.float()}")
-            losses.append(loss.float())
+            losses.append(loss.item())
 
         if (i+1 % 1000 == 0):
             target_agent = copy.deepcopy(agent)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     plot_losses(losses, timestamp)
-    torch.save(agent.state_dict(), f"models/self_play_{timestamp}.pth")
+    torch.save(agent.state_dict(), f"aa228_final/models/self_play_{timestamp}.pth")
 
 
 if __name__ == "__main__":

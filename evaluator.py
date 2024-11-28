@@ -1,9 +1,9 @@
 import torch
 from model import PokerModel
 from poker import Game
-import matplotlib.pyplot as plt
 import argparse
 from tqdm import tqdm
+import numpy as np
 
 NUM_GAMES = 1000
 pbar = tqdm(total=NUM_GAMES)
@@ -35,8 +35,9 @@ def main(model1_filename, model2_filename):
 
             if game_finished:
                 player_rewards_per_game[current_player].append(reward)
-                other_player = 0 if current_player == 1 else 1
-                player_rewards_per_game[other_player].append(-1* (game.pot - reward))
+                if reward != -1000:
+                    other_player = 0 if current_player == 1 else 1
+                    player_rewards_per_game[other_player].append(-1* (game.pot - reward))
 
                 game = Game()
                 next_state = game.get_state()
@@ -45,6 +46,9 @@ def main(model1_filename, model2_filename):
                 pbar.update(1)
             else:
                 next_state = game.get_state()
+    
+    print(f"Average rewards of model 1: {np.mean(player_rewards_per_game[0])}")
+    print(f"Average rewards of model 2: {np.mean(player_rewards_per_game[1])}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

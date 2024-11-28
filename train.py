@@ -5,23 +5,28 @@ import copy
 import random
 from datetime import datetime
 import matplotlib.pyplot as plt
+import argparse
 
 NUM_ACTIONS = 10000  # Number of actions to take
 BATCH_SIZE = 10
 GAMMA = 1
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-def plot_losses(losses, timestamp):
+def plot_losses(losses, timestamp, is_vanilla):
     plt.figure(figsize=(10, 6))
     plt.plot(losses)
     plt.xlabel('Iteration')
     plt.ylabel('Loss')
-    plt.title('Self Play Loss')
+    if is_vanilla:
+        title = 'Vanilla Self Play Loss'
+    else:
+        title = "Dealer's Choice Self Play Loss"
+    plt.title(title)
     plt.grid(True)
-    plt.savefig(f"plots/self_play_{timestamp}.png")
+    plt.savefig(f"plots/self_play_{timestamp}_vanilla_{is_vanilla}.png")
 
-def main():
-    agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5, vanilla=False).to(DEVICE)
+def main(is_vanilla):
+    agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5, vanilla=is_vanilla).to(DEVICE)
     target_agent = agent
 
     game = Game()
@@ -93,9 +98,12 @@ def main():
             target_agent = copy.deepcopy(agent)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    plot_losses(losses, timestamp)
-    torch.save(agent.state_dict(), f"models/self_play_{timestamp}.pth")
+    plot_losses(losses, timestamp, is_vanilla)
+    torch.save(agent.state_dict(), f"models/self_play_{timestamp}_vanilla_{is_vanilla}.pth")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--vanilla', type=bool, default=False)
+    args = parser.parse_args()
+    main(is_vanilla=args.vanilla)

@@ -26,7 +26,7 @@ def plot_losses(losses, timestamp, is_vanilla):
     plt.savefig(f"plots/self_play_{timestamp}_vanilla_{is_vanilla}.png")
 
 def main(is_vanilla):
-    agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5, vanilla=is_vanilla).to(DEVICE)
+    agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5).to(DEVICE)
     target_agent = agent
 
     game = Game()
@@ -59,9 +59,17 @@ def main(is_vanilla):
                 replay_buffer = replay_buffer[1:] + [cur_player_transition]
             else:
                 replay_buffer.append(cur_player_transition)
+
+            if reward != -1000:  # if opponent didn't end game by taking illegal action
+                other_player = 0 if current_player == 1 else 1
+                if transtion_construction[other_player]:
+                    other_s, other_a, _ = transtion_construction[other_player]
+                    other_r = -1 * (game.pot - reward)
+                    replay_buffer.append([other_s, other_a, other_r, None])
+            
+            transtion_construction = [[],[]]
             game = Game()
             next_state = game.get_state()
-            # TODO: update last transition from other player
         else:
             next_state = game.get_state()
             next_player = game.current_to_act
@@ -104,6 +112,6 @@ def main(is_vanilla):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-v', '--vanilla', type=bool, default=False)
+    parser.add_argument('-v', '--vanilla', action="store_true")
     args = parser.parse_args()
     main(is_vanilla=args.vanilla)

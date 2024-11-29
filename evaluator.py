@@ -1,5 +1,5 @@
 import torch
-from model import PokerModel
+from model import PokerModel, RandomPokerModel
 from poker import Game
 import argparse
 from tqdm import tqdm
@@ -10,13 +10,19 @@ pbar = tqdm(total=NUM_GAMES)
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 def main(model1_filename, model2_filename):
-    model1 = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5).to(DEVICE)
-    model1.load_state_dict(torch.load(model1_filename, weights_only=True))
-    model1.eval()
+    if model1_filename == "random":
+        model1 = RandomPokerModel()
+    else:
+        model1 = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5).to(DEVICE)
+        model1.load_state_dict(torch.load(model1_filename, weights_only=True))
+        model1.eval()
 
-    model2 = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5).to(DEVICE)
-    model2.load_state_dict(torch.load(model2_filename, weights_only=True))
-    model2.eval()
+    if model2_filename == "random":
+        model2 = RandomPokerModel()
+    else:
+        model2 = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5).to(DEVICE)
+        model2.load_state_dict(torch.load(model2_filename, weights_only=True))
+        model2.eval()
 
     num_finished = 0
     players = [model1, model2]
@@ -30,7 +36,7 @@ def main(model1_filename, model2_filename):
             current_agent = players[current_player]
             current_state = next_state
 
-            action, _ = current_agent.next_action(current_state)
+            action, _ = current_agent.next_action(current_state, game)
             reward, game_finished = game.perform_action(action)
 
             if game_finished:

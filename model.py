@@ -39,10 +39,13 @@ class PokerModel(nn.Module):
         action = torch.argmax(logits)
         return action, logits[action]
 
-    def next_action(self, state_vector):
+    def next_action(self, state_vector, game):
         random_action = random.random() < self.epsilion
         self.epsilion = self.epsilion * self.epsilon_lr
         if random_action:
-            return random.randint(0, ACTION_DIM-1), None
+            return random.randint(0, ACTION_DIM-1), None  # allow model to learn that some actions are illegal
         return self.max_action(state_vector)
 
+class RandomPokerModel():
+    def next_action(self, state_vector, game):
+        return random.choice(game.available_actions()), None

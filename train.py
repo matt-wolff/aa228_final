@@ -5,23 +5,28 @@ import copy
 import random
 from datetime import datetime
 import matplotlib.pyplot as plt
+import argparse
 
 NUM_ACTIONS = 10000  # Number of actions to take
 BATCH_SIZE = 10
 GAMMA = 1
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-def plot_losses(losses, timestamp):
+def plot_losses(losses, timestamp, is_vanilla):
     plt.figure(figsize=(10, 6))
     plt.plot(losses)
     plt.xlabel('Iteration')
     plt.ylabel('Loss')
-    plt.title('Self Play Loss')
+    if is_vanilla:
+        title = 'Vanilla Self Play Loss'
+    else:
+        title = "Dealer's Choice Self Play Loss"
+    plt.title(title)
     plt.grid(True)
-    plt.savefig(f"aa228_final/plots/self_play_{timestamp}.png")
+    plt.savefig(f"plots/self_play_{timestamp}_vanilla_{is_vanilla}.png")
 
-def main():
-    agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5, vanilla=False).to(DEVICE)
+def main(is_vanilla):
+    agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5).to(DEVICE)
     target_agent = agent
 
     game = Game()
@@ -45,7 +50,7 @@ def main():
                 replay_buffer.append(transtion_construction[current_player])
             transtion_construction[current_player] = []
 
-        action, _ = agent.next_action(current_state)
+        action, _ = agent.next_action(current_state, game)
         reward, game_finished = game.perform_action(action)
 
         if game_finished:
@@ -54,9 +59,17 @@ def main():
                 replay_buffer = replay_buffer[1:] + [cur_player_transition]
             else:
                 replay_buffer.append(cur_player_transition)
+
+            if reward != -1000:  # if opponent didn't end game by taking illegal action
+                other_player = 0 if current_player == 1 else 1
+                if transtion_construction[other_player]:
+                    other_s, other_a, _ = transtion_construction[other_player]
+                    other_r = -1 * (game.pot - reward)
+                    replay_buffer.append([other_s, other_a, other_r, None])
+            
+            transtion_construction = [[],[]]
             game = Game()
             next_state = game.get_state()
-            # TODO: update last transition from other player
         else:
             next_state = game.get_state()
             next_player = game.current_to_act
@@ -93,9 +106,12 @@ def main():
             target_agent = copy.deepcopy(agent)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    plot_losses(losses, timestamp)
-    torch.save(agent.state_dict(), f"aa228_final/models/self_play_{timestamp}.pth")
+    plot_losses(losses, timestamp, is_vanilla)
+    torch.save(agent.state_dict(), f"models/self_play_{timestamp}_vanilla_{is_vanilla}.pth")
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-v', '--vanilla', action="store_true")
+    args = parser.parse_args()
+    main(is_vanilla=args.vanilla)

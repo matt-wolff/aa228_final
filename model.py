@@ -14,13 +14,11 @@ class PokerModel(nn.Module):
             hidden_dim,
             n_layers,
             dropout_p,
-            vanilla  # If true, don't consider the first 
         ):
         super().__init__()
-        self.vanilla = vanilla
 
         layers = []
-        prev_dim = STATE_DIM - NUM_WILD_CARDS if vanilla else  STATE_DIM
+        prev_dim = STATE_DIM
         for _ in range(n_layers):
             layers.extend([
                 nn.Linear(prev_dim, hidden_dim),
@@ -41,12 +39,13 @@ class PokerModel(nn.Module):
         action = torch.argmax(logits)
         return action, logits[action]
 
-    def next_action(self, state_vector):
-        if self.vanilla:
-            state_vector = state_vector[NUM_WILD_CARDS:]
+    def next_action(self, state_vector, game):
         random_action = random.random() < self.epsilion
         self.epsilion = self.epsilion * self.epsilon_lr
         if random_action:
-            return random.randint(0, ACTION_DIM-1), None
+            return random.randint(0, ACTION_DIM-1), None  # allow model to learn that some actions are illegal
         return self.max_action(state_vector)
 
+class RandomPokerModel():
+    def next_action(self, state_vector, game):
+        return random.choice(game.available_actions()), None

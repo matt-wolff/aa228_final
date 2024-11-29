@@ -237,3 +237,37 @@ class Game:
             return self.raise_bet(amount)
         else: #all-in
             return self.all_in()
+    
+    # available actions for the current player
+    def available_actions(self):
+        actions = [1, 2, 10]  # calling, folding, and going all-in are always legal
+
+        if (self.bet_to_call == 0):  # if checking is legal
+            actions.append(0)
+
+        def raising_call_legal(action):
+            raise_scalar = action - 1
+            amount = self.bet_to_call * raise_scalar
+            return amount > 2 * self.bet_to_call
+        if (raising_call_legal(3)):  # raise call 2x
+            actions.append(3)
+        if (raising_call_legal(4)):  # raise call 3x
+            actions.append(4)
+        if (raising_call_legal(5)):  # raise call 4x
+            actions.append(5)
+        
+        def raising_pot_legal(action):
+            raise_scalar = 2 ** (action - 6)
+            pot_scalar = (1/4) * raise_scalar
+            amount = int(pot_scalar * self.pot)
+            return amount > 2 * self.bet_to_call
+        if (raising_pot_legal(6)):  # raise pot 0.25x
+            actions.append(6)
+        if (raising_pot_legal(7)):  # raise 0.5x
+            actions.append(7)
+        if (raising_pot_legal(8)):  # raise 1x
+            actions.append(8)
+        if (raising_pot_legal(9)):  # raise 2x
+            actions.append(9)
+        
+        return actions

@@ -53,7 +53,9 @@ def main(model1_filename, model2_filename):
             else:
                 next_state = game.get_state()
     
+    print(f"Total rewards of model 1: {sum(player_rewards_per_game[0])}")
     print(f"Average rewards of model 1: {np.mean(player_rewards_per_game[0])}")
+    print(f"Total rewards of model 2: {sum(player_rewards_per_game[1])}")
     print(f"Average rewards of model 2: {np.mean(player_rewards_per_game[1])}")
 
 if __name__ == "__main__":

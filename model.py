@@ -34,12 +34,18 @@ class PokerModel(nn.Module):
         self.epsilion = 1
         self.epsilon_lr = 1 - 10**-4
 
-    def max_action(self, state_vector):
+    def max_action(self, state_vector, game=None):
         logits = self.model(state_vector)
-        action = torch.argmax(logits)
+        if game is not None:
+            possible_actions = game.available_actions()
+            action = possible_actions[torch.argmax(logits[possible_actions])]
+        else:
+            action = torch.argmax(logits)
         return action, logits[action]
 
-    def next_action(self, state_vector, game):
+    def next_action(self, state_vector, game=None):
+        if game is not None:
+            return self.max_action(state_vector, game)
         random_action = random.random() < self.epsilion
         self.epsilion = self.epsilion * self.epsilon_lr
         if random_action:

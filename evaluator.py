@@ -60,7 +60,7 @@ def main(model1_filename, model2_filename):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-model1', '--m1', type=str)
-    parser.add_argument('-model2', '--m2', type=str)
+    parser.add_argument('-model1', '--m1', type=str, default="random")
+    parser.add_argument('-model2', '--m2', type=str, default="models/self_play_20241128_133219_vanilla_False.pth")
     args = parser.parse_args()
     main(model1_filename=args.m1, model2_filename=args.m2)

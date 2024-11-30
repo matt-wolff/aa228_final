@@ -91,7 +91,8 @@ def main(is_vanilla):
                     y = r_t
                 else:
                     with torch.no_grad():
-                        _, target_val = target_agent.max_action(s_t_plus_one)
+                        double_dqn_action, _ = agent.max_action(s_t_plus_one)
+                        _, target_val = target_agent.model(s_t_plus_one)[double_dqn_action]
                         y = r_t + GAMMA * target_val
                 loss += (y - agent.model(s_t)[a_t]) ** 2
 

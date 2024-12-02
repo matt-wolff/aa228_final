@@ -208,15 +208,19 @@ class Game:
         #blinds get factored in at the end of the game
         if ((button_score - other_score) > 0): #other wins
             if self.current_to_act == 1:
+                self.players[1].total_chips += self.pot
                 return self.pot + reward - self.players[1].blind_bet
             else:
                 return reward  - self.players[1].blind_bet
         elif ((button_score - other_score) < 0): #button wins
             if self.current_to_act == 0:
+                self.players[0].total_chips += self.pot
                 return self.pot + reward - self.players[0].blind_bet
             else:
                 return reward  - self.players[0].blind_bet
         else: #split pot
+            self.players[0].total_chips += (self.pot / 2)
+            self.players[1].total_chips += (self.pot / 2)
             return (self.pot / 2) + reward - self.players[self.current_to_act].blind_bet
     
     def next_round(self, reward):

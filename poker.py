@@ -280,9 +280,9 @@ class Game:
             return reward, False
         
     def call(self):
-         reward = -self.bet_to_call
+         reward = -self.bet_to_call + self.players[self.current_to_act].current_round_bet
          #if call leaves player broke
-         if (self.bet_to_call >= self.players[self.current_to_act].total_chips):  
+         if (self.bet_to_call >= self.players[self.current_to_act].total_chips + self.players[self.current_to_act].current_round_bet):  
              self.bet(self.players[self.current_to_act].total_chips)
              return self.runout_game(reward) # TOD0: need to adjust the pot, didn't match full bet, (wait, doesn't matter here? heads up with same starting money, shouldn't be possible
          elif (self.current_to_act == 0):

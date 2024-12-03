@@ -50,7 +50,7 @@ def main(is_vanilla):
                 replay_buffer.append(transtion_construction[current_player])
             transtion_construction[current_player] = []
 
-        action, _ = agent.next_action(current_state)
+        action, _ = agent.next_action(current_state, game, eval=False)
         reward, game_finished = game.perform_action(action)
 
         if game_finished:
@@ -91,7 +91,7 @@ def main(is_vanilla):
                     y = r_t
                 else:
                     with torch.no_grad():
-                        double_dqn_action, _ = agent.max_action(s_t_plus_one)
+                        double_dqn_action, _ = agent.max_action(s_t_plus_one, game, eval=False)
                         _, target_val = target_agent.model(s_t_plus_one)[double_dqn_action]
                         y = r_t + GAMMA * target_val
                 loss += (y - agent.model(s_t)[a_t]) ** 2

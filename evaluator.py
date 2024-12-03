@@ -36,7 +36,7 @@ def main(model1_filename, model2_filename):
             current_agent = players[current_player]
             current_state = next_state
 
-            action, _ = current_agent.next_action(current_state, game)
+            action, _ = current_agent.next_action(current_state, game, eval=True)
             reward, game_finished = game.perform_action(action)
 
             if game_finished:

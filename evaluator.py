@@ -48,7 +48,7 @@ def main(model1_filename, model2_filename):
                     other_player = 0 if current_player == 1 else 1
                     if reward < 0: #current_player lost, other_player won
                         other_r = game.pot - game.players[other_player].blind_bet
-                    elif game.players[other_player].total_chips = 100: # players start with 100 chips, so if pot was split, player will still have 100 chips at end of game
+                    elif game.players[other_player].total_chips == 100: # players start with 100 chips, so if pot was split, player will still have 100 chips at end of game
                         other_r = (game.pot / 2) - game.players[other_player].blind_bet
                     else: # other player lost
                         other_r = -game.players[other_player].blind_bet

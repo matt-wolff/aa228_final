@@ -92,13 +92,13 @@ class Game:
             #small blinds
             self.players[self.current_to_act].total_chips -= self.small_blind
             self.players[self.current_to_act].blind_bet += self.small_blind
-            self.update_current_to_act(self.current_to_act, self.num_players)
+            self.current_to_act = self.update_current_to_act(self.current_to_act, self.num_players)
             self.pot += self.small_blind
 
             # big blind
             self.players[self.current_to_act].total_chips -=  self.big_blind
             self.players[self.current_to_act].blind_bet += self.big_blind
-            self.update_current_to_act(self.current_to_act, self.num_players)
+            self.current_to_act = self.update_current_to_act(self.current_to_act, self.num_players)
             self.pot += self.big_blind
 
         #now we are good to goooo baby

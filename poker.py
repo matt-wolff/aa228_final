@@ -14,6 +14,7 @@ class Player:
         self.total_chips = total_chips
         self.hole_cards = []
         self.blind_bet = 0
+        self.round_current_bet = 0
 
 # players listed in seating order, button is index of seating order and will increment
 #our_player can be index of player that our model is tracking
@@ -246,6 +247,8 @@ class Game:
         self.current_to_act = self.update_current_to_act(self.button, self.num_players)
         self.current_round += 1
         self.bet_to_call = 0
+        for player in self.players:
+            player.current_round_bet = 0
         return reward, False
 
     #give rest of table cards and then run showdown
@@ -260,9 +263,10 @@ class Game:
     def bet(self, amount):
         if isinstance(amount, torch.Tensor):
             amount = amount.cpu()
-        self.pot += amount
+        self.pot += amount 
         self.players[self.current_to_act].total_chips -= amount
-        self.bet_to_call = amount
+        self.players[self.current_to_act].current_round_bet += amount
+        self.bet_to_call = amount + self.players[self.current_to_act].current_round_bet
     
     def check(self):
         reward = 0
@@ -290,7 +294,7 @@ class Game:
              return reward, False
 
     def all_in(self):
-        reward = -self.players[self.current_to_act].total_chips
+        reward = -self.players[self.current_to_act].total_chips + self.players[self.current_to_act].current_round_bet
         # if all-in is just a call (do self.call)
         if (self.bet_to_call >= -reward):
             self.bet(-reward)
@@ -301,7 +305,7 @@ class Game:
             return reward, False
 
     def raise_bet(self, amount):
-        reward = -amount
+        reward = -amount + self.players[self.current_to_act].current_round_bet
         #check for illegal actions (not min raise)
         if (amount <= (2 * self.bet_to_call)):
             return -1000, True

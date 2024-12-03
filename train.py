@@ -13,7 +13,7 @@ BATCH_SIZE = 10
 GAMMA = 1
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-def plot_losses(losses, timestamp, is_vanilla):
+def plot_losses(losses, timestamp, is_vanilla, bomb_pot):
     plt.figure(figsize=(10, 6))
     plt.plot(losses)
     plt.xlabel('Iteration')
@@ -22,15 +22,17 @@ def plot_losses(losses, timestamp, is_vanilla):
         title = 'Vanilla Self Play Loss'
     else:
         title = "Dealer's Choice Self Play Loss"
+    if bomb_pot:
+        title += ", Bomb Pot"
     plt.title(title)
     plt.grid(True)
-    plt.savefig(f"plots/self_play_{timestamp}_vanilla_{is_vanilla}.png")
+    plt.savefig(f"plots/self_play_{timestamp}_vanilla_{is_vanilla}_bomb_{bomb_pot}.png")
 
-def main(is_vanilla):
+def main(is_vanilla, bomb_pot):
     agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5).to(DEVICE)
     target_agent = agent
 
-    game = Game(vanilla=is_vanilla)
+    game = Game(vanilla=is_vanilla, bomb=bomb_pot)
     replay_buffer = []
     losses = []
 
@@ -118,12 +120,13 @@ def main(is_vanilla):
             target_agent = copy.deepcopy(agent)
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    plot_losses(losses, timestamp, is_vanilla)
-    torch.save(agent.state_dict(), f"models/self_play_{timestamp}_vanilla_{is_vanilla}.pth")
+    plot_losses(losses, timestamp, is_vanilla, bomb_pot)
+    torch.save(agent.state_dict(), f"models/self_play_{timestamp}_vanilla_{is_vanilla}_bomb_{bomb_pot}.pth")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--vanilla', action="store_true")
+    parser.add_argument('-bp', '--bomb_pot', action="store_true")
     args = parser.parse_args()
-    main(is_vanilla=args.vanilla)
+    main(is_vanilla=args.vanilla, bomb_pot=args.bomb_pot)

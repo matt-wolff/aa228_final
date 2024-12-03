@@ -87,7 +87,7 @@ class Game:
             self.pot += self.bomb_amount
             
             #next round (straight to flop)
-            _, _ = self.next_round(0, False)
+            _, _ = self.next_round(0)
         else:    
             #small blinds
             self.players[self.current_to_act].total_chips -= self.small_blind
@@ -229,8 +229,8 @@ class Game:
             else:
                 return reward  - self.players[0].blind_bet
         else: #split pot
-            self.players[0].total_chips += (self.pot / 2)
-            self.players[1].total_chips += (self.pot / 2)
+            self.players[0].total_chips += int(self.pot / 2)
+            self.players[1].total_chips += int(self.pot / 2)
             return (self.pot / 2) + reward - self.players[self.current_to_act].blind_bet
     
     def next_round(self, reward):

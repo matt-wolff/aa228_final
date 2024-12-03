@@ -30,7 +30,7 @@ def main(is_vanilla):
     agent = PokerModel(hidden_dim=1024, n_layers=5, dropout_p=0.5).to(DEVICE)
     target_agent = agent
 
-    game = Game()
+    game = Game(vanilla=is_vanilla)
     replay_buffer = []
     losses = []
 

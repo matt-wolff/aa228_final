@@ -14,7 +14,7 @@ class Player:
         self.total_chips = total_chips
         self.hole_cards = []
         self.blind_bet = 0
-        self.round_current_bet = 0
+        self.current_round_bet = 0
 
 # players listed in seating order, button is index of seating order and will increment
 #our_player can be index of player that our model is tracking

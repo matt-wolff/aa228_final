@@ -53,5 +53,5 @@ class PokerModel(nn.Module):
         return self.max_action(state_vector, game, eval)
 
 class RandomPokerModel():
-    def next_action(self, state_vector, game):
+    def next_action(self, state_vector, game, eval):
         return random.choice(game.available_actions()), None

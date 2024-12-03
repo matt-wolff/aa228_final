@@ -6,6 +6,7 @@ import random
 from datetime import datetime
 import matplotlib.pyplot as plt
 import argparse
+from tqdm import tqdm
 
 NUM_ACTIONS = 10000  # Number of actions to take
 BATCH_SIZE = 10
@@ -39,7 +40,7 @@ def main(is_vanilla):
     ]
 
     next_state = game.get_state()
-    for i in range(NUM_ACTIONS):
+    for i in tqdm(range(NUM_ACTIONS)):
         current_player = game.current_to_act
         current_state = next_state
         if transtion_construction[current_player]:

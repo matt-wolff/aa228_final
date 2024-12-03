@@ -43,7 +43,7 @@ class Game:
             return 0
         return index_to_act
     
-    def __init__(self, names=["Tomas", "Mattheus"], big_blind=2, small_blind=1, button=0, vanilla=True, bomb=0):
+    def __init__(self, names=["Tomas", "Mattheus"], big_blind=2, small_blind=1, button=0, vanilla=True, bomb=False):
         self.players = []
         for name in names: # i did this the fun way, probably a better way if you want to make class more generalizable
             self.players.append(Player(name, 100))
@@ -57,7 +57,6 @@ class Game:
         self.pot = 0
         self.current_to_act = self.update_current_to_act(self.button, self.num_players)
         self.bet_to_call = big_blind
-        self.bomb = bomb
         #set dealers choice rules using vanilla boolean (no wild card if vanilla == True)
         self.dealers_choice_rule = np.zeros(14)
         self.wild_card = np.zeros(13)
@@ -75,16 +74,17 @@ class Game:
         
         #pay blinds or bomb
 
-        if self.bomb > 0:
+        if bomb:
+            self.bomb_amount = 10
             self.dealers_choice_rule[13] = 1
-            #players pay bomb
-            self.players[0].total_chips -= self.bomb
-            self.players[0].blind_bet += self.bomb
-            self.pot += self.bomb
+            #players pay bomb pot
+            self.players[0].total_chips -= self.bomb_amount
+            self.players[0].blind_bet += self.bomb_amount
+            self.pot += self.bomb_amount
 
-            self.players[1].total_chips -=  self.bomb
-            self.players[1].blind_bet += self.bomb
-            self.pot += self.bomb
+            self.players[1].total_chips -=  self.bomb_amount
+            self.players[1].blind_bet += self.bomb_amount
+            self.pot += self.bomb_amount
             
             #next round (straight to flop)
             _, _ = self.next_round(0, False)

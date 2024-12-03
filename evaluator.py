@@ -36,7 +36,7 @@ def main(model1_filename, model2_filename):
             current_agent = players[current_player]
             current_state = next_state
 
-            action, _ = current_agent.next_action(current_state, game)
+            action, _ = current_agent.next_action(current_state, game, eval=True)
             reward, game_finished = game.perform_action(action)
 
             if game_finished:
@@ -60,7 +60,7 @@ def main(model1_filename, model2_filename):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-model1', '--m1', type=str)
-    parser.add_argument('-model2', '--m2', type=str)
+    parser.add_argument('-model1', '--m1', type=str, default="random")
+    parser.add_argument('-model2', '--m2', type=str, default="models/self_play_20241128_133219_vanilla_False.pth")
     args = parser.parse_args()
     main(model1_filename=args.m1, model2_filename=args.m2)

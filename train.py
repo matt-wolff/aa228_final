@@ -50,7 +50,7 @@ def main(is_vanilla):
                 replay_buffer.append(transtion_construction[current_player])
             transtion_construction[current_player] = []
 
-        action, _ = agent.next_action(current_state, game)
+        action, _ = agent.next_action(current_state, game, eval=False)
         reward, game_finished = game.perform_action(action)
 
         if game_finished:
@@ -64,7 +64,12 @@ def main(is_vanilla):
                 other_player = 0 if current_player == 1 else 1
                 if transtion_construction[other_player]:
                     other_s, other_a, _ = transtion_construction[other_player]
-                    other_r = -1 * (game.pot - reward)
+                    if reward < 0: #current_player lost, other_player won
+                        other_r = game.pot - self.players[other_player].blind_bet
+                    elif game.players[other_player].total_chips = 100: # players start with 100 chips, so if pot was split, player will still have 100 chips at end of game
+                        other_r = (game.pot / 2) - self.players[other_player].blind_bet
+                    else: # other player lost
+                        other_r = -self.players[other_player].blind_bet
                     replay_buffer.append([other_s, other_a, other_r, None])
             
             transtion_construction = [[],[]]
@@ -91,7 +96,8 @@ def main(is_vanilla):
                     y = r_t
                 else:
                     with torch.no_grad():
-                        _, target_val = target_agent.max_action(s_t_plus_one)
+                        double_dqn_action, _ = agent.max_action(s_t_plus_one, game, eval=False)
+                        _, target_val = target_agent.model(s_t_plus_one)[double_dqn_action]
                         y = r_t + GAMMA * target_val
                 loss += (y - agent.model(s_t)[a_t]) ** 2
 

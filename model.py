@@ -5,7 +5,7 @@ import random
 import torch
 
 NUM_WILD_CARDS = 13
-STATE_DIM = 136  # First thirteen are wild cards
+STATE_DIM = 137  # First thirteen are wild cards
 ACTION_DIM = 11  # check, call, fold, raise (2x, 3x, 4x highest bet. 1/4, 1/2, 1, 2 pot. all-in)
 
 class PokerModel(nn.Module):
@@ -50,7 +50,7 @@ class PokerModel(nn.Module):
         self.epsilion = self.epsilion * self.epsilon_lr
         if random_action:
             return random.randint(0, ACTION_DIM-1), None  # allow model to learn that some actions are illegal
-        return self.max_action(state_vector)
+        return self.max_action(state_vector, game, eval)
 
 class RandomPokerModel():
     def next_action(self, state_vector, game):

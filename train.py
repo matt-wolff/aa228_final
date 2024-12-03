@@ -40,6 +40,8 @@ def main(is_vanilla):
     ]
 
     next_state = game.get_state()
+
+    game_history = []
     for i in tqdm(range(NUM_ACTIONS)):
         current_player = game.current_to_act
         current_state = next_state
@@ -53,8 +55,10 @@ def main(is_vanilla):
 
         action, _ = agent.next_action(current_state, game, eval=False)
         reward, game_finished = game.perform_action(action)
+        game_history.append([current_player, current_state, action])
 
         if game_finished:
+            game_history = []
             cur_player_transition = [current_state, action, reward, None]
             if len(replay_buffer) >= 100:
                 replay_buffer = replay_buffer[1:] + [cur_player_transition]
@@ -66,11 +70,11 @@ def main(is_vanilla):
                 if transtion_construction[other_player]:
                     other_s, other_a, _ = transtion_construction[other_player]
                     if reward < 0: #current_player lost, other_player won
-                        other_r = game.pot - self.players[other_player].blind_bet
-                    elif game.players[other_player].total_chips = 100: # players start with 100 chips, so if pot was split, player will still have 100 chips at end of game
-                        other_r = (game.pot / 2) - self.players[other_player].blind_bet
+                        other_r = game.pot - game.players[other_player].blind_bet
+                    elif game.players[other_player].total_chips == 100: # players start with 100 chips, so if pot was split, player will still have 100 chips at end of game
+                        other_r = (game.pot / 2) - game.players[other_player].blind_bet
                     else: # other player lost
-                        other_r = -self.players[other_player].blind_bet
+                        other_r = -game.players[other_player].blind_bet
                     replay_buffer.append([other_s, other_a, other_r, None])
             
             transtion_construction = [[],[]]
@@ -98,7 +102,7 @@ def main(is_vanilla):
                 else:
                     with torch.no_grad():
                         double_dqn_action, _ = agent.max_action(s_t_plus_one, game, eval=False)
-                        _, target_val = target_agent.model(s_t_plus_one)[double_dqn_action]
+                        target_val = target_agent.model(s_t_plus_one)[double_dqn_action]
                         y = r_t + GAMMA * target_val
                 loss += (y - agent.model(s_t)[a_t]) ** 2
 
@@ -106,7 +110,8 @@ def main(is_vanilla):
             loss.backward()
             agent.optimizer.step()
 
-            print(f"Iteration: {i}, Loss: {loss.float()}")
+            if i % 500 == 0:
+                print(f"Iteration: {i}, Loss: {loss.float()}")
             losses.append(loss.item())
 
         if (i+1 % 1000 == 0):

@@ -30,6 +30,7 @@ def main(model1_filename, model2_filename):
 
     game = Game()
     next_state = game.get_state()
+    reward_game = [0,0]
     with tqdm() as pbar:
         while num_finished != NUM_GAMES:
             current_player = game.current_to_act
@@ -39,13 +40,22 @@ def main(model1_filename, model2_filename):
             action, _ = current_agent.next_action(current_state, game, eval=True)
             reward, game_finished = game.perform_action(action)
 
+            reward_game[current_player] += reward
+
             if game_finished:
-                player_rewards_per_game[current_player].append(reward)
+                player_rewards_per_game[current_player].append(reward_game[current_player])
                 if reward != -1000:
                     other_player = 0 if current_player == 1 else 1
-                    player_rewards_per_game[other_player].append(-1* (game.pot - reward))
+                    if reward < 0: #current_player lost, other_player won
+                        other_r = game.pot - game.players[other_player].blind_bet
+                    elif game.players[other_player].total_chips = 100: # players start with 100 chips, so if pot was split, player will still have 100 chips at end of game
+                        other_r = (game.pot / 2) - game.players[other_player].blind_bet
+                    else: # other player lost
+                        other_r = -game.players[other_player].blind_bet
+                    player_rewards_per_game[other_player].append(reward_game[other_player] + other_r)
 
                 game = Game()
+                reward_game = [0, 0]
                 next_state = game.get_state()
 
                 num_finished += 1

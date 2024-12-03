@@ -221,11 +221,11 @@ class Game:
                 self.players[1].total_chips += self.pot
                 return self.pot + reward - self.players[1].blind_bet
             else:
-                return reward  - self.players[1].blind_bet
+                return reward  - self.players[0].blind_bet
         elif ((button_score - other_score) < 0): #button wins
             if self.current_to_act == 0:
                 self.players[0].total_chips += self.pot
-                return self.pot + reward - self.players[0].blind_bet
+                return self.pot + reward - self.players[1].blind_bet
             else:
                 return reward  - self.players[0].blind_bet
         else: #split pot

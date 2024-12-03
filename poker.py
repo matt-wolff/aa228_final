@@ -265,8 +265,8 @@ class Game:
             amount = amount.cpu()
         self.pot += amount 
         self.players[self.current_to_act].total_chips -= amount
-        self.players[self.current_to_act].current_round_bet += amount
         self.bet_to_call = amount + self.players[self.current_to_act].current_round_bet
+        self.players[self.current_to_act].current_round_bet += amount
     
     def check(self):
         reward = 0

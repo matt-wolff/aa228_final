@@ -64,7 +64,12 @@ def main(is_vanilla):
                 other_player = 0 if current_player == 1 else 1
                 if transtion_construction[other_player]:
                     other_s, other_a, _ = transtion_construction[other_player]
-                    other_r = -1 * (game.pot - reward)
+                    if reward < 0: #current_player lost, other_player won
+                        other_r = game.pot - self.players[other_player].blind_bet
+                    elif game.players[other_player].total_chips = 100: # players start with 100 chips, so if pot was split, player will still have 100 chips at end of game
+                        other_r = (game.pot / 2) - self.players[other_player].blind_bet
+                    else: # other player lost
+                        other_r = -self.players[other_player].blind_bet
                     replay_buffer.append([other_s, other_a, other_r, None])
             
             transtion_construction = [[],[]]

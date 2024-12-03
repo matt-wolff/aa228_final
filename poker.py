@@ -13,8 +13,7 @@ class Player:
         self.name = name
         self.total_chips = total_chips
         self.hole_cards = []
-
-#hand evaluation comparison function, define different types of hands, need to figure out how to use both table card and hole cards, check for all possible combinations. only need to do this at the end if there is showdown
+        self.blind_bet = 0
 
 # players listed in seating order, button is index of seating order and will increment
 #our_player can be index of player that our model is tracking
@@ -22,9 +21,8 @@ class Player:
 #players listed in seated order, button is index for dealer
 #dealers choice rule is array for wild card
 class Game:
-    # create deck function, 11-14 face cards (10,11,12,13,14)
+    # create deck function, face cards 10,11,12,13,14
     # one-hot encoding, contantenated
-    # create deck function, 11-14 face cards (10,11,12,13,14)
     def create_deck(self):
         # Define ranks and suits
         values = np.identity(13)
@@ -44,7 +42,7 @@ class Game:
             return 0
         return index_to_act
     
-    def __init__(self, names=["Tomas", "Mattheus"], big_blind=2, small_blind=1, button=0, dealers_choice_rule=np.zeros(13)):
+    def __init__(self, names=["Tomas", "Mattheus"], big_blind=2, small_blind=1, button=0, vanilla=True, bomb=0):
         self.players = []
         for name in names: # i did this the fun way, probably a better way if you want to make class more generalizable
             self.players.append(Player(name, 100))
@@ -55,27 +53,52 @@ class Game:
         self.deck = self.create_deck()
         self.table_cards = np.zeros(17 * 5)
         self.current_round = 0 # 0 = pre-flop, 1 = flop, and so on...
-        self.dealers_choice_rule = dealers_choice_rule
         self.pot = 0
         self.current_to_act = self.update_current_to_act(self.button, self.num_players)
         self.bet_to_call = big_blind
-
-        #need to initialize so it starts at first state with action (after blinds)
+        self.bomb = bomb
+        #set dealers choice rules using vanilla boolean (no wild card if vanilla == True)
+        self.dealers_choice_rule = np.zeros(14)
+        self.wild_card = np.zeros(13)
+        if vanilla == False:
+            #set random wild card
+            wild_index = random.randint(0, 12)
+            self.dealers_choice_rule[wild_index] = 1
+            self.wild_card[wild_index] = 1
+        
+        #need to initialize game so it starts at the first state with action (after blinds)
 
         #deal cards
         for player in self.players:
             player.hole_cards = [self.deck.pop() for i in range(2)]
         
-        #pay blinds
-        #small blinds
-        self.players[self.current_to_act].total_chips -= self.small_blind
-        self.update_current_to_act(self.current_to_act, self.num_players)
-        self.pot += self.small_blind
+        #pay blinds or bomb
 
-        # big blind
-        self.players[self.current_to_act].total_chips -=  self.big_blind
-        self.update_current_to_act(self.current_to_act, self.num_players)
-        self.pot += self.big_blind
+        if self.bomb > 0:
+            self.dealers_choice_rule[13] = 1
+            #players pay bomb
+            self.players[0].total_chips -= self.bomb
+            self.players[0].blind_bet += self.bomb
+            self.pot += self.bomb
+
+            self.players[1].total_chips -=  self.bomb
+            self.players[1].blind_bet += self.bomb
+            self.pot += self.bomb
+            
+            #next round (straight to flop)
+            _, _ = self.next_round(0, False)
+        else:    
+            #small blinds
+            self.players[self.current_to_act].total_chips -= self.small_blind
+            self.players[self.current_to_act].blind_bet += self.small_blind
+            self.update_current_to_act(self.current_to_act, self.num_players)
+            self.pot += self.small_blind
+
+            # big blind
+            self.players[self.current_to_act].total_chips -=  self.big_blind
+            self.players[self.current_to_act].blind_bet += self.big_blind
+            self.update_current_to_act(self.current_to_act, self.num_players)
+            self.pot += self.big_blind
 
         #now we are good to goooo baby
 
@@ -101,30 +124,104 @@ class Game:
 
         return str(value) + suit
 
+    def evaluate_hand(self, player_index):
+        separated_tabled_cards = [self.table_cards[i*17:(i+1)*17] for i in range(5)]
+        evaluator = Evaluator()
+        
+        #check if there is wild_card rule active
+        if 1 in self.wild_card:
+            wild_index = self.wild_card.index(1)
+            
+            #for looping through possible cards
+            all_possible_cards = self.create_deck()
+            
+            hole_wild_count = 0
+            converted_hole = []
+            for card in self.players[player_index].hole_cards:
+                if card[wild_index] == 0:
+                    converted_hole.append(self.convert_card(card))
+                else:
+                    hole_wild_count += 1
+            
+            converted_hole_combinations = [] #use to store all combinations of cards so we can try together with all combinations of table cards
+            # I could've made a recursive function to build to combinations lists...but this seemed easier although messier
+            if hole_wild_count == 0:
+                converted_hole_combinations = [converted_hole]
+            else:
+                for card1 in all_possible_cards:
+                    if hole_wild_count == 2:
+                        for card2 in all_possible_cards:
+                            converted_hole_combinations.append([self.convert_card(card1), self.convert_card(card2)]) 
+                    else: 
+                        converted_hole_combinations.append([converted_hole[0], self.convert_card(card1)])
+            
+            # do the same for table cards
+            table_wild_count = 0
+            converted_table = []
+            for card in separated_tabled_cards:
+                if card[wild_index] == 0:
+                    converted_table.append(self.convert_card(card))
+                else:
+                    table_wild_count += 1
+            
+            converted_table_combinations = []
+            if table_wild_count == 0:
+                converted_table_combinations = [converted_table]
+            else:
+                for card1 in all_possible_cards:
+                    if table_wild_count > 1:
+                        for card2 in all_possible_cards:
+                            if table_wild_count > 2:
+                                for card3 in all_possible_cards:
+                                    if table_wild_count == 4:
+                                        for card4 in all_possible_cards:
+                                            converted_table_combinations.append(converted_table + [self.convert_card(card1), self.convert_card(card2), self.convert_card(card3), self.convert_card(card4)])
+                                    else:
+                                        converted_table_combinations.append(converted_table + [self.convert_card(card1), self.convert_card(card2), self.convert_card(card3)])
+                            else:
+                                converted_table_combinations.append(converted_table + [self.convert_card(card1), self.convert_card(card2)])
+                    else: 
+                        converted_table_combinations.append(converted_table + [self.convert_card(card1)])
+            
+            best_score = 7462  # 7462 is the worst score from Treys evaluator
+            for hole in converted_hole_combinations:
+                for table in converted_table_combinations:
+                    hand_score = evaluator.evaluate(table, hole)
+                    if hand_score < best_score:
+                        best_score = hand_score
+            
+            return best_score
+        else:
+            #no wild cards, do normal conversions
+            converted_hole = [Card.new(self.convert_card(card)) for card in self.players[player_index].hole_cards]
+            converted_table = [Card.new(self.convert_card(card)) for card in separated_tabled_cards]
+            return evaluator.evaluate(converted_table, converted_hole)
+        pass    
+
      # funtion which returns reward for current player of showdown
     def showdown(self, reward):
-        converted_button = [Card.new(self.convert_card(card)) for card in self.players[0].hole_cards]
-        converted_other = [Card.new(self.convert_card(card)) for card in self.players[1].hole_cards]
-        separated_tabled_cards = [self.table_cards[i*17:(i+1)*17] for i in range(5)]
-        converted_table = [Card.new(self.convert_card(card)) for card in separated_tabled_cards]
 
-        evaluator = Evaluator()
-        button_score = evaluator.evaluate(converted_table, converted_button)
-        other_score = evaluator.evaluate(converted_table, converted_other)
-
+        button_score = self.evaluate_hand(0)
+        other_score = self.evaluate_hand(1)
+        
         #remember lower score is better
+        #blinds get factored in at the end of the game
         if ((button_score - other_score) > 0): #other wins
             if self.current_to_act == 1:
-                return self.pot
+                self.players[1].total_chips += self.pot
+                return self.pot + reward - self.players[1].blind_bet
             else:
-                return reward
+                return reward  - self.players[1].blind_bet
         elif ((button_score - other_score) < 0): #button wins
             if self.current_to_act == 0:
-                return self.pot
+                self.players[0].total_chips += self.pot
+                return self.pot + reward - self.players[0].blind_bet
             else:
-                return reward
+                return reward  - self.players[0].blind_bet
         else: #split pot
-            return self.pot / 2
+            self.players[0].total_chips += (self.pot / 2)
+            self.players[1].total_chips += (self.pot / 2)
+            return (self.pot / 2) + reward - self.players[self.current_to_act].blind_bet
     
     def next_round(self, reward):
         if self.current_round == 0: #pre-flop
@@ -139,6 +236,7 @@ class Game:
 
         self.current_to_act = self.update_current_to_act(self.button, self.num_players)
         self.current_round += 1
+        self.bet_to_call = 0
         return reward, False
 
     #give rest of table cards and then run showdown
@@ -208,13 +306,12 @@ class Game:
     # performs only one action, updates current_to_act
     def perform_action(self, action):
         #return reward and boolean of 'game_finished'
-        current_player = self.players[self.current_to_act] # remember this is only a copy
         if (action == 0): # check
             return self.check()
         elif (action == 1): # call
             return self.call()
         elif (action == 2): # fold
-            return 0, True
+            return -self.players[self.current_to_act].blind_bet, True
         elif (action == 3 or action == 4 or action == 5): # raise bet_to_call (2x, 3x, 4x)
             raise_scalar = action - 1
             amount = self.bet_to_call * raise_scalar

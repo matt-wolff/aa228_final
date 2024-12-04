@@ -4,10 +4,14 @@ from poker import Game
 import argparse
 from tqdm import tqdm
 import numpy as np
+import random
 
 NUM_GAMES = 1000
 pbar = tqdm(total=NUM_GAMES)
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+np.random.seed(42)
+random.seed(42)
 
 def main(model1_filename, model2_filename):
     if model1_filename == "random":
@@ -53,6 +57,9 @@ def main(model1_filename, model2_filename):
                     else: # other player lost
                         other_r = -game.players[other_player].blind_bet
                     player_rewards_per_game[other_player].append(reward_game[other_player] + other_r)
+                
+                if player_rewards_per_game[current_player][-1] != -1 * player_rewards_per_game[other_player][-1]:
+                    print()
 
                 game = Game()
                 reward_game = [0, 0]

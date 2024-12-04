@@ -92,14 +92,17 @@ class Game:
             #small blinds
             self.players[self.current_to_act].total_chips -= self.small_blind
             self.players[self.current_to_act].blind_bet += self.small_blind
+            self.players[self.current_to_act].current_round_bet = self.small_blind
             self.current_to_act = self.update_current_to_act(self.current_to_act, self.num_players)
             self.pot += self.small_blind
 
             # big blind
             self.players[self.current_to_act].total_chips -=  self.big_blind
             self.players[self.current_to_act].blind_bet += self.big_blind
+            self.players[self.current_to_act].current_round_bet = self.big_blind
             self.current_to_act = self.update_current_to_act(self.current_to_act, self.num_players)
             self.pot += self.big_blind
+
 
         #now we are good to goooo baby
 
@@ -310,10 +313,10 @@ class Game:
         if (amount <= (2 * self.bet_to_call)):
             return -1000, True
         #if raise amount is basically just an all-in
-        elif (amount >= self.players[self.current_to_act].total_chips):
+        elif (-reward >= self.players[self.current_to_act].total_chips):
             return self.all_in()
         else:
-            self.bet(amount)
+            self.bet(-reward)
             self.current_to_act = self.update_current_to_act(self.current_to_act, self.num_players)
             return reward, False
         

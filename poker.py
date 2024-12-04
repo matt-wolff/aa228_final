@@ -132,7 +132,7 @@ class Game:
         suit_dict = {13: "h", 14: "d", 15: "c", 16: "s"}
         suit = suit_dict[indexes[1]]
 
-        return str(value) + suit
+        return Card.new(str(value) + suit)
 
     def evaluate_hand(self, player_index):
         separated_tabled_cards = [self.table_cards[i*17:(i+1)*17] for i in range(5)]
@@ -140,7 +140,7 @@ class Game:
         
         #check if there is wild_card rule active
         if 1 in self.wild_card:
-            wild_index = self.wild_card.index(1)
+            wild_index = np.where(self.wild_card == 1)[0][0]
             
             #for looping through possible cards
             all_possible_cards = self.create_deck()
@@ -196,15 +196,16 @@ class Game:
             best_score = 7462  # 7462 is the worst score from Treys evaluator
             for hole in converted_hole_combinations:
                 for table in converted_table_combinations:
-                    hand_score = evaluator.evaluate(table, hole)
-                    if hand_score < best_score:
-                        best_score = hand_score
+                    if len(set(table + hole)) == len(table + hole):
+                        hand_score = evaluator.evaluate(table, hole)
+                        if hand_score < best_score:
+                            best_score = hand_score
             
             return best_score
         else:
             #no wild cards, do normal conversions
-            converted_hole = [Card.new(self.convert_card(card)) for card in self.players[player_index].hole_cards]
-            converted_table = [Card.new(self.convert_card(card)) for card in separated_tabled_cards]
+            converted_hole = [self.convert_card(card) for card in self.players[player_index].hole_cards]
+            converted_table = [self.convert_card(card) for card in separated_tabled_cards]
             return evaluator.evaluate(converted_table, converted_hole)
         pass    
 

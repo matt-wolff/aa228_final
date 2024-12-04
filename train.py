@@ -80,7 +80,7 @@ def main(is_vanilla, bomb_pot):
                     replay_buffer.append([other_s, other_a, other_r, None])
             
             transtion_construction = [[],[]]
-            game = Game()
+            game = Game(vanilla=is_vanilla, bomb=bomb_pot)
             next_state = game.get_state()
         else:
             next_state = game.get_state()

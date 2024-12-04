@@ -57,9 +57,6 @@ def main(model1_filename, model2_filename):
                     else: # other player lost
                         other_r = -game.players[other_player].blind_bet
                     player_rewards_per_game[other_player].append(reward_game[other_player] + other_r)
-                
-                if player_rewards_per_game[current_player][-1] != -1 * player_rewards_per_game[other_player][-1]:
-                    print()
 
                 game = Game()
                 reward_game = [0, 0]

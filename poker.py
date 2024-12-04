@@ -297,9 +297,9 @@ class Game:
              return reward, False
 
     def all_in(self):
-        reward = -self.players[self.current_to_act].total_chips + self.players[self.current_to_act].current_round_bet
+        reward = -self.players[self.current_to_act].total_chips
         # if all-in is just a call (do self.call)
-        if (self.bet_to_call >= -reward):
+        if (self.bet_to_call >= -reward + self.players[self.current_to_act].current_round_bet):
             self.bet(-reward)
             return self.runout_game(reward)
         else: #is a raise, need to see if opponent calls

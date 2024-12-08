@@ -29,10 +29,16 @@ def main(model1_filename, model2_filename):
         model2.eval()
 
     num_finished = 0
-    players = [model1, model2]
+    // players = [model1, model2]
     player_rewards_per_game = [[], []]
 
     game = Game()
+    determine_position = random.randint(0,1)
+    if determine_position:
+        players = [model1, model2]
+    else : 
+        players = [model2, model1]
+    
     next_state = game.get_state()
     reward_game = [0,0]
     with tqdm() as pbar:
@@ -47,7 +53,10 @@ def main(model1_filename, model2_filename):
             reward_game[current_player] += reward
 
             if game_finished:
-                player_rewards_per_game[current_player].append(reward_game[current_player])
+                if determine_position:
+                    player_rewards_per_game[current_player].append(reward_game[current_player])
+                else:
+                    player_rewards_per_game[other_player].append(reward_game[current_player])
                 if reward != -1000:
                     other_player = 0 if current_player == 1 else 1
                     if reward < 0: #current_player lost, other_player won
@@ -56,9 +65,17 @@ def main(model1_filename, model2_filename):
                         other_r = (game.pot / 2) - game.players[other_player].blind_bet
                     else: # other player lost
                         other_r = -game.players[other_player].blind_bet
-                    player_rewards_per_game[other_player].append(reward_game[other_player] + other_r)
+                    if determine_position:
+                        player_rewards_per_game[other_player].append(reward_game[other_player] + other_r)
+                    else:
+                        player_rewards_per_game[current_player].append(reward_game[other_player] + other_r)
 
                 game = Game()
+                determine_position = random.randint(0,1)
+                if determine_position:
+                    players = [model1, model2]
+                else : 
+                    players = [model2, model1]
                 reward_game = [0, 0]
                 next_state = game.get_state()
 
